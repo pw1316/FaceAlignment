@@ -94,16 +94,26 @@
     <ClCompile Include="3rdparty\liblinear\linear.cpp" />
     <ClCompile Include="3rdparty\liblinear\tron.cpp" />
     <ClCompile Include="3rdparty\mt19937\mt19937ar.cpp" />
+    <ClCompile Include="forest.cpp" />
+    <ClCompile Include="image.cpp" />
     <ClCompile Include="lbf.cpp" />
     <ClCompile Include="timer.cpp" />
+    <ClCompile Include="tree.cpp" />
+    <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="3rdparty\liblinear\blas\blas.h" />
     <ClInclude Include="3rdparty\liblinear\blas\blasp.h" />
     <ClInclude Include="3rdparty\liblinear\linear.h" />
     <ClInclude Include="3rdparty\liblinear\tron.h" />
-    <ClInclude Include="structs.h" />
+    <ClInclude Include="forest.h" />
+    <ClInclude Include="image.h" />
+    <ClInclude Include="lbf.h" />
+    <ClInclude Include="node.h" />
+    <ClInclude Include="struct.hpp" />
     <ClInclude Include="timer.h" />
+    <ClInclude Include="tree.h" />
+    <ClInclude Include="utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
