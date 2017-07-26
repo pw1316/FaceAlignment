@@ -1,0 +1,101 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="liblinear">
+      <UniqueIdentifier>{f444ccdf-2867-41f8-be41-8a5c588945bc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="liblinear\blas">
+      <UniqueIdentifier>{f8dbdea5-63f3-482f-8ec3-fa807bbaa1c6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="mt19937">
+      <UniqueIdentifier>{25e5cdcf-1536-43b1-8548-3240f1c8774c}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="timer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lbf.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="3rdparty\liblinear\linear.cpp">
+      <Filter>liblinear</Filter>
+    </ClCompile>
+    <ClCompile Include="3rdparty\liblinear\tron.cpp">
+      <Filter>liblinear</Filter>
+    </ClCompile>
+    <ClCompile Include="3rdparty\liblinear\blas\daxpy.c">
+      <Filter>liblinear\blas</Filter>
+    </ClCompile>
+    <ClCompile Include="3rdparty\liblinear\blas\ddot.c">
+      <Filter>liblinear\blas</Filter>
+    </ClCompile>
+    <ClCompile Include="3rdparty\liblinear\blas\dnrm2.c">
+      <Filter>liblinear\blas</Filter>
+    </ClCompile>
+    <ClCompile Include="3rdparty\liblinear\blas\dscal.c">
+      <Filter>liblinear\blas</Filter>
+    </ClCompile>
+    <ClCompile Include="3rdparty\mt19937\mt19937ar.cpp">
+      <Filter>mt19937</Filter>
+    </ClCompile>
+    <ClCompile Include="utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="image.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tree.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="forest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="3rdparty\liblinear\linear.h">
+      <Filter>liblinear</Filter>
+    </ClInclude>
+    <ClInclude Include="3rdparty\liblinear\tron.h">
+      <Filter>liblinear</Filter>
+    </ClInclude>
+    <ClInclude Include="3rdparty\liblinear\blas\blas.h">
+      <Filter>liblinear\blas</Filter>
+    </ClInclude>
+    <ClInclude Include="3rdparty\liblinear\blas\blasp.h">
+      <Filter>liblinear\blas</Filter>
+    </ClInclude>
+    <ClInclude Include="timer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lbf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="struct.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="node.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tree.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="image.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="forest.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
