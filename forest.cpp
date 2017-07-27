@@ -3,9 +3,9 @@
 
 static const float lbf_PI = 3.14159265358979323846f;
 
-void LbfRandomForest::build(const Image* Train_Images, const Matrix2Df& input_landmarks, const Matrix2Df& input_gt_offsets)
+void LbfRandomForest::build(const Image* trainImages, const Matrix2Df& inputRegShapes, const Matrix2Df& inputGtOffsets)
 {
-    int Nsamples = input_landmarks.cols;
+    int Nsamples = inputRegShapes.cols;
     int nFeatures = lbf_C_n_2(NUM_SAMPLE_PIXELS);
 #if DATA_SET == SET_FACE_WAREHOUSE
     float pupil_d = 120.f; //mean_shape(1);
@@ -26,8 +26,8 @@ void LbfRandomForest::build(const Image* Train_Images, const Matrix2Df& input_la
 
     // constant
 #ifndef TREE_BOOSTING
-    const Matrix2Df& landmarks = input_landmarks;
-    const Matrix2Df& gt_offsets = input_gt_offsets;
+    const Matrix2Df& landmarks = inputRegShapes;
+    const Matrix2Df& gt_offsets = inputGtOffsets;
 #endif
     for (int ri = 0; ri < NUM_RADIUS; ++ri)
     {
@@ -52,7 +52,7 @@ void LbfRandomForest::build(const Image* Train_Images, const Matrix2Df& input_la
         Matrix2Di pixelValues(Nsamples, NUM_SAMPLE_PIXELS);
         for (int i = 0; i < Nsamples; ++i)
         {
-            const Image& img = Train_Images[i / NUM_AUG];
+            const Image& img = trainImages[i / NUM_AUG];
             float cx = landmarks[0][i], cy = landmarks[1][i];
 
             for (int pi = 0; pi < NUM_SAMPLE_PIXELS; ++pi)
@@ -113,7 +113,7 @@ void LbfRandomForest::build(const Image* Train_Images, const Matrix2Df& input_la
         float oob_error = 0.f;
         for (int i = 0; i < Nsamples; ++i)
         {
-            const Image& img = Train_Images[i / NUM_AUG];
+            const Image& img = trainImages[i / NUM_AUG];
             float2 landmark(landmarks[0][i], landmarks[1][i]);
 
             float2 offset(0.f);
@@ -162,7 +162,7 @@ void LbfRandomForest::build(const Image* Train_Images, const Matrix2Df& input_la
         printf("select Random Forest trained on radius=%f with least oob error\n", min_R);
 }
 
-float2 LbfRandomForest::run(const Image& img, const float2& landmark, int* leaves)
+float2 LbfRandomForest::run(const Image& img, const float2& landmark, int* resultLeaves)
 {
     float2 offset(0.f);
     int leaf_id_offset = 0;
@@ -170,7 +170,7 @@ float2 LbfRandomForest::run(const Image& img, const float2& landmark, int* leave
     {
         int leaf;
         offset += this->trees[ti].run(img, landmark, &leaf);
-        leaves[ti] = leaf + leaf_id_offset;
+        resultLeaves[ti] = leaf + leaf_id_offset;
         leaf_id_offset += this->trees[ti].nLeaves;
     }
 
