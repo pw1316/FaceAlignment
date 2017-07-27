@@ -60,8 +60,8 @@ void LbfTree::load(FILE * fp)
 {
     fread(&root, sizeof(int), 1, fp);
     fread(&nLeaves, sizeof(int), 1, fp);
-    int sz;
-    fread(&sz, sizeof(int), 1, fp); nodes.resize(sz);
+	size_t sz;
+    fread(&sz, sizeof(size_t), 1, fp); nodes.resize(sz);
     fread(&nodes[0], sizeof(LbfNode)*sz, 1, fp);
 }
 
@@ -69,8 +69,8 @@ void LbfTree::dump(FILE * fp)
 {
     fwrite(&root, sizeof(int), 1, fp);
     fwrite(&nLeaves, sizeof(int), 1, fp);
-    int sz = nodes.size();
-    fwrite(&sz, sizeof(int), 1, fp);
+    size_t sz = nodes.size();
+    fwrite(&sz, sizeof(size_t), 1, fp);
     fwrite(&nodes[0], sizeof(LbfNode)*sz, 1, fp);
 }
 
@@ -91,7 +91,7 @@ int LbfTree::build(int & leaf_id, const int * sampleIdxs, int Nsamples, const Ma
         node.leaf.offset.y = inv * offset_y;
         node.leaf.id = (leaf_id++);
         this->nodes.push_back(node);
-        return this->nodes.size() - 1;
+        return (int)(this->nodes.size() - 1);
     }
 
     int M = lbf_C_n_2(NUM_SAMPLE_PIXELS);
@@ -196,7 +196,7 @@ int LbfTree::build(int & leaf_id, const int * sampleIdxs, int Nsamples, const Ma
         node.leaf.offset.y = inv*offset_y;
         node.leaf.id = (leaf_id++);
         this->nodes.push_back(node);
-        return this->nodes.size() - 1;
+        return (int)(this->nodes.size() - 1);
     }
 
     assert(split_on_fea >= 0);
@@ -225,5 +225,5 @@ int LbfTree::build(int & leaf_id, const int * sampleIdxs, int Nsamples, const Ma
     node.split.pt2.y = split_pt2.y;
     node.split.threshold = split_threshold;
     this->nodes.push_back(node);
-    return this->nodes.size() - 1;
+    return (int)(this->nodes.size() - 1);
 }

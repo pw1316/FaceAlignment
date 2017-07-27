@@ -64,30 +64,7 @@ public:
 private:
     void loadShape(const string& fpath, int width, int height, float* shp);
     void dumpShape(string& fpath, float* shp);
-    void loadTrainingData(Image* Train_Images, Matrix2Df& Train_Shapes, Matrix2Df& Regression_Shapes)
-    {
-        string img_path, shp_path;
-
-        float _shp[2 * NUM_LANDMARKS];
-        for (int i = 0; i < TRAIN_DATA_SIZE; ++i)
-        {
-            img_path = getImagePath(i);
-            shp_path = getShapePath(i);
-
-            Train_Images[i].load(img_path);
-            loadShape(shp_path, Train_Images[i].width, Train_Images[i].height, _shp);
-            Train_Shapes.column(i) = _shp;
-        }
-        mean(Train_Shapes, Mean_Shape); // same rectangle??
-        string mean_shape_f = TRAIN_DATA_PATH + "meanshape";
-        dumpShape(mean_shape_f, Mean_Shape);
-
-        for (int i = 0, iLen = TRAIN_DATA_SIZE*NUM_AUG; i < iLen; ++i)
-        {
-            int idx = randM(TRAIN_DATA_SIZE);
-            Regression_Shapes.column(i) = Train_Shapes.column(idx);
-        }
-    }
+	void loadTrainingData(Image* Train_Images, Matrix2Df& Train_Shapes, Matrix2Df& Regression_Shapes);
     feature_node* globalFeatures(int* localBF/*,int P*/, int non0count)
     {
         feature_node* feas = new feature_node[non0count + 1];
@@ -379,12 +356,14 @@ void LBF::loadRegressor(Matrix2D<LbfRandomForest>& rforests, Matrix2D<model*>& m
 
             sprintf(fname_buf, "t%dl%d.w", t, 2 * l);
             fpath = TRAIN_DATA_PATH + fname_buf;
-            ret = (models[t - 1][2 * l] = load_model(fpath.c_str()));
+            models[t - 1][2 * l] = load_model(fpath.c_str());
+			ret = (models[t - 1][2 * l] == NULL) ? false : true;
             if (!ret) { printf("error reading W\n"); exit(-1); }
 
             sprintf(fname_buf, "t%dl%d.w", t, 2 * l + 1);
             fpath = TRAIN_DATA_PATH + fname_buf;
-            ret = (models[t - 1][2 * l + 1] = load_model(fpath.c_str()));
+            models[t - 1][2 * l + 1] = load_model(fpath.c_str());
+			ret = (models[t - 1][2 * l + 1] == NULL) ? false : true;
             if (!ret) { printf("error reading W\n"); exit(-1); }
 
             printf("\r%d/%d   %d     ", t, NUM_STAGES, l);
@@ -465,8 +444,8 @@ void LBF::test()
 
 void LBF::loadShape(const string & fpath, int width, int height, float * shp)
 {
-    int dot = fpath.find_last_of('.');
-    if (dot < 0) { printf("error loading shape\n"); exit(-1); }
+    size_t dot = fpath.find_last_of('.');
+    if (dot == fpath.npos) { printf("error loading shape\n"); exit(-1); }
 
     string ext = fpath.substr(dot + 1);
     if (ext == "land")
@@ -501,4 +480,29 @@ void LBF::dumpShape(string & fpath, float * shp)
     fwrite(&nLandmark, sizeof(int), 1, fp);
     fwrite(shp, sizeof(float), 2 * NUM_LANDMARKS, fp);
     fclose(fp);
+}
+
+void LBF::loadTrainingData(Image * trainImages, Matrix2Df & trainShapes, Matrix2Df & regShapes)
+{
+	string img_path, shp_path;
+
+	float _shp[2 * NUM_LANDMARKS];
+	for (int i = 0; i < TRAIN_DATA_SIZE; ++i)
+	{
+		img_path = getImagePath(i);
+		shp_path = getShapePath(i);
+
+		trainImages[i].load(img_path);
+		loadShape(shp_path, trainImages[i].width, trainImages[i].height, _shp);
+		trainShapes.column(i) = _shp;
+	}
+	mean(trainShapes, Mean_Shape); // same rectangle??
+	string mean_shape_f = TRAIN_DATA_PATH + "meanshape";
+	dumpShape(mean_shape_f, Mean_Shape);
+
+	for (int i = 0, iLen = TRAIN_DATA_SIZE*NUM_AUG; i < iLen; ++i)
+	{
+		int idx = randM(TRAIN_DATA_SIZE);
+		regShapes.column(i) = trainShapes.column(idx);
+	}
 }

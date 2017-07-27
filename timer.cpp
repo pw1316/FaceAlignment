@@ -54,7 +54,7 @@ ScopeTic::ScopeTic(const char* t)
     if (t)
     {
         printf("Starting [%s]\n", t);
-        strcpy(text, t);
+		strcpy_s(text, t);
     }
     else text[0] = 0;
 }
@@ -88,7 +88,7 @@ ScopeTic::~ScopeTic()
 
 AccumTic::AccumTic(const char* t) :running(false), tm(0)
 {
-    if (t) strcpy(text, t);
+    if (t) strcpy_s(text, t);
     else text[0] = 0;
 }
 

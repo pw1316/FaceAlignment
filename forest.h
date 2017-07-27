@@ -15,8 +15,8 @@ struct LbfRandomForest
 
     bool load(std::string fpath)
     {
-        FILE* fp = fopen(fpath.c_str(), "rb");
-        if (!fp) return false;
+		FILE* fp;
+        if (fopen_s(&fp, fpath.c_str(), "rb")) return false;
         fread(&nLeaves, sizeof(int), 1, fp);
         for (int i = 0; i < NUM_TREES; ++i)
             trees[i].load(fp);
@@ -25,8 +25,8 @@ struct LbfRandomForest
     }
     bool dump(std::string fpath)
     {
-        FILE* fp = fopen(fpath.c_str(), "wb");
-        if (!fp) return false;
+		FILE* fp;
+        if (fopen_s(&fp, fpath.c_str(), "wb")) return false;
         fwrite(&nLeaves, sizeof(int), 1, fp);
         for (int i = 0; i < NUM_TREES; ++i)
             trees[i].dump(fp);
