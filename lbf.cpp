@@ -284,7 +284,7 @@ void LBF::loadTrainingData(Image* trainImages, Matrix2Df& trainShapes, Matrix2Df
 void LBF::loadRegressor(Matrix2D<LbfRandomForest>& randomForests, Matrix2D<model*>& models)
 {
     printf("loading trained regressor...\n");
-    string meanShapeFile = TRAIN_DATA_PATH + "meanshape";
+    string meanShapeFile = TRAINED_DATA_PATH + "meanshape";
     FILE* fp;
     fopen_s(&fp, meanShapeFile.c_str(), "rb");
     int L;
@@ -298,18 +298,18 @@ void LBF::loadRegressor(Matrix2D<LbfRandomForest>& randomForests, Matrix2D<model
         for (int landmarkId = 0; landmarkId < NUM_LANDMARKS; ++landmarkId)
         {
             sprintf_s(fileNameBuf, "s%02dl%03d.rf", stageId, landmarkId);
-            string fpath = TRAIN_DATA_PATH + fileNameBuf;
+            string fpath = TRAINED_DATA_PATH + fileNameBuf;
             bool ret = (randomForests[stageId - 1][landmarkId].load(fpath));
             if (!ret) { printf("error reading rf\n"); exit(-1); }
 
             sprintf_s(fileNameBuf, "s%02dl%03d.w", stageId, 2 * landmarkId);
-            fpath = TRAIN_DATA_PATH + fileNameBuf;
+            fpath = TRAINED_DATA_PATH + fileNameBuf;
             models[stageId - 1][2 * landmarkId] = load_model(fpath.c_str());
             ret = (models[stageId - 1][2 * landmarkId] == NULL) ? false : true;
             if (!ret) { printf("error reading W\n"); exit(-1); }
 
             sprintf_s(fileNameBuf, "s%02dl%03d.w", stageId, 2 * landmarkId + 1);
-            fpath = TRAIN_DATA_PATH + fileNameBuf;
+            fpath = TRAINED_DATA_PATH + fileNameBuf;
             models[stageId - 1][2 * landmarkId + 1] = load_model(fpath.c_str());
             ret = (models[stageId - 1][2 * landmarkId + 1] == NULL) ? false : true;
             if (!ret) { printf("error reading W\n"); exit(-1); }
