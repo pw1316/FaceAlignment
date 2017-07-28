@@ -54,7 +54,7 @@ ScopeTic::ScopeTic(const char* t)
     if (t)
     {
         printf("Starting [%s]\n", t);
-		strcpy_s(text, t);
+        strcpy_s(text, t);
     }
     else text[0] = 0;
 }

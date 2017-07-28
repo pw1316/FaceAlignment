@@ -12,16 +12,16 @@ struct Image
 {
     Image() :data(0), shape(0), width(0), height(0) {}
     ~Image();
-    uint8* operator[](int i);    
+    uint8* operator[](int i);
     uint8* operator[](int i) const;
     bool load(const std::string& fpath);
-	bool detectFaceAndNormalize(float* shp);
+    bool detectFaceAndNormalize(float* shp);
     void plotShape(float* shp);
     void saveAs(const std::string& fpath);
-    
+
     uint8* data;
-	int2 faceLeftTop;
-	int faceWidth, faceHeight;
+    int2 faceLeftTop;
+    int faceWidth, faceHeight;
     int* shape; // plot shape
     int width, height;
 };

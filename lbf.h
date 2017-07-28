@@ -1,8 +1,6 @@
 #ifndef __LBF_H__
 #define __LBF_H__
 
-#define _CRT_SECURE_NO_WARNINGS
-
 #define SET_BIOID 1
 #define SET_FACE_WAREHOUSE 2
 #define DATA_SET SET_FACE_WAREHOUSE // select dataset
