@@ -3,12 +3,12 @@
 
 #define SET_BIOID 1
 #define SET_FACE_WAREHOUSE 2
-#define DATA_SET SET_FACE_WAREHOUSE // select dataset
+#define DATA_SET SET_BIOID // select dataset
 
-#if DATA_SET==SET_BIOID
+#if DATA_SET == SET_BIOID
 #define TRAIN_DATA_SIZE 30 //1521
 #define NUM_LANDMARKS 20
-#elif DATA_SET==SET_FACE_WAREHOUSE
+#elif DATA_SET == SET_FACE_WAREHOUSE
 #define TRAIN_DATA_SIZE 20 //60
 #define NUM_LANDMARKS 74
 #else
@@ -26,6 +26,6 @@
 #define NO_READ_W
 //#define TREE_BOOSTING
 
-#define CASCADE_NAME ".\\3rdparty\\haarcascade_frontalface_alt.xml"
+#define CASCADE_NAME ".\\3rdparty\\haarcascade_frontalface_alt2.xml"
 
 #endif

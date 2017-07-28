@@ -5,6 +5,34 @@ using std::string;
 using std::vector;
 using namespace cv;
 
+static bool checkShapeInFace(Rect r, float* shp)
+{
+    float sumX = 0;
+    float sumY = 0;
+    float maxX = 0, minX = FLT_MAX, maxY = 0, minY = FLT_MAX;
+    for (int landmarkId = 0; landmarkId < NUM_LANDMARKS; landmarkId++) {
+        if (shp[2 * landmarkId] > maxX) maxX = shp[2 * landmarkId];
+        if (shp[2 * landmarkId] < minX) minX = shp[2 * landmarkId];
+        if (shp[2 * landmarkId + 1] > maxY) maxY = shp[2 * landmarkId + 1];
+        if (shp[2 * landmarkId + 1] < minY) minY = shp[2 * landmarkId + 1];
+        sumX += shp[2 * landmarkId];
+        sumY += shp[2 * landmarkId + 1];
+    }
+    if ((maxX - minX) > r.width*1.5) {
+        return false;
+    }
+    if ((maxY - minY) > r.height*1.5) {
+        return false;
+    }
+    if (abs(sumX / NUM_LANDMARKS - (r.x + r.width / 2.0f)) > r.width / 2.0f) {
+        return false;
+    }
+    if (abs(sumY / NUM_LANDMARKS - (r.y + r.height / 2.0f)) > r.height / 2.0f) {
+        return false;
+    }
+    return true;
+}
+
 Image::~Image()
 {
     if (data) delete[] data;
@@ -61,8 +89,9 @@ bool Image::load(const string & fpath)
 }
 
 // Train Only. Assuming 1 face
-bool Image::detectFaceAndNormalize(float * shp)
+bool Image::detectFaceAndNormalize(float* shp)
 {
+    // Detect
     CascadeClassifier cc;
     if (!cc.load(CASCADE_NAME))
     {
@@ -74,22 +103,38 @@ bool Image::detectFaceAndNormalize(float * shp)
     vector<Rect> cvFaces;
     Rect r = Rect(0, 0, 0, 0);
     equalizeHist(cvImage, cvImage);
-    cc.detectMultiScale(cvImage, cvFaces, 1.1, 3, 0);
-    for (int i = 0; i < cvFaces.size(); i++)
+    cc.detectMultiScale(cvImage, cvFaces);
+    if (cvFaces.size() <= 0)
     {
-        r = cvFaces[i];
-        break;
+        printf("No faces\n");
+        exit(-1);
     }
-    if (r.width == 0 || r.height == 0)
+    int faceId;
+    for (faceId = 0; faceId < cvFaces.size(); ++faceId)
     {
-        printf("No face detected\n");
-        return false;
+        r = cvFaces[faceId];
+        if (checkShapeInFace(r, shp))
+            break;
+    }
+    if (faceId >= cvFaces.size())
+    {
+        printf("No shapes in face");
+        exit(-1);
     }
     this->faceLeftTop.x = r.x;
     this->faceLeftTop.y = r.y;
     this->faceWidth = r.width;
     this->faceHeight = r.height;
     system("del \"~temp.png\"");
+
+    // Normalize
+    for (int landmarkId = 0; landmarkId < NUM_LANDMARKS; ++landmarkId)
+    {
+        float& x = shp[2 * landmarkId];
+        float& y = shp[2 * landmarkId + 1];
+        x = (x - faceLeftTop.x) / faceWidth;
+        y = (y - faceLeftTop.y) / faceHeight;
+    }
     return true;
 }
 
