@@ -3,10 +3,10 @@
 
 #define SET_BIOID 1
 #define SET_FACE_WAREHOUSE 2
-#define DATA_SET SET_BIOID // select dataset
+#define DATA_SET SET_FACE_WAREHOUSE // select dataset
 
 #if DATA_SET == SET_BIOID
-#define TRAIN_DATA_SIZE 30 //1521
+#define TRAIN_DATA_SIZE 30//30 //1521
 #define NUM_LANDMARKS 20
 #elif DATA_SET == SET_FACE_WAREHOUSE
 #define TRAIN_DATA_SIZE 20 //60

@@ -8,6 +8,20 @@
 
 using namespace std;
 
+/* Assertion */
+#undef assert
+static void _pwassert(const wchar_t* expression, const wchar_t* file, unsigned line)
+{
+    printf("PW Assertion failed: %ws\n", expression);
+    printf("%ws(%u)\n", file, line);
+    volatile int i = 0;
+    i = 1 / i;
+}
+#define assert(expression) (void)(                                                       \
+            (!!(expression)) ||                                                              \
+            (_pwassert(_CRT_WIDE(#expression), _CRT_WIDE(__FILE__), (unsigned)(__LINE__)), 0) \
+        )
+
 #if DATA_SET == SET_BIOID
 const string TRAIN_DATA_PATH = ".\\TrainData\\BioID\\";
 const string TRAINED_DATA_PATH = ".\\TrainedModel\\BioID\\";
@@ -64,6 +78,7 @@ class LBF
 public:
     void train();
     void test();
+    void run(const string& imgPath);
 private:
     void loadTrainingData(Image* trainImages, Matrix2Df& trainShapes, Matrix2Df& regShapes);
     void loadRegressor(Matrix2D<LbfRandomForest>& randomForests, Matrix2D<model*>& models);
@@ -82,9 +97,10 @@ int main()
 {
     LBF lbf;
     tic();
-    lbf.train();
+    //lbf.train();
     toc();
     //lbf.test();
+    lbf.run("ym3.jpg");
 
     return 0;
 }
@@ -215,6 +231,7 @@ void LBF::test()
             printf("error loading test image %d\n", i);
             continue;
         }
+        img.detectFace();
         // reset initial shape
         memcpy(shp, meanShape, sizeof(float) * 2 * NUM_LANDMARKS);
         char testName[256];
@@ -257,20 +274,78 @@ void LBF::test()
     }
 }
 
+void LBF::run(const string & imgPath)
+{
+    Matrix2D<LbfRandomForest> randomForests(NUM_STAGES, NUM_LANDMARKS);
+    Matrix2D<model*> models(NUM_STAGES, 2 * NUM_LANDMARKS);
+    int nonzeroLeaves[NUM_LANDMARKS * NUM_TREES];
+    loadRegressor(randomForests, models);
+
+    Image img;
+    float shp[2 * NUM_LANDMARKS];
+    if (!img.load(imgPath))
+    {
+        printf("error loading image\n");
+        return;
+    }
+    img.detectFace();
+    // reset initial shape
+    memcpy(shp, meanShape, sizeof(float) * 2 * NUM_LANDMARKS);
+    char testName[256];
+    sprintf_s(testName, "%ss%02d.png", imgPath.c_str(), 0);
+    img.plotShape(shp);
+    img.saveAs(TEST_DATA_PATH + testName);
+    sprintf_s(testName, "%ss%02d.shp", imgPath.c_str(), 0);
+    dumpShapeBin(TEST_DATA_PATH + testName, shp);
+
+    tic();
+    for (int stageId = 0; stageId < NUM_STAGES; ++stageId)
+    {
+        // regress local binary features
+        int leafIdOffset = 0;
+        for (int landmarkId = 0; landmarkId < NUM_LANDMARKS; ++landmarkId)
+        {
+            int* _leaves = nonzeroLeaves + landmarkId * NUM_TREES;
+            randomForests[stageId][landmarkId].run(img, float2(shp[2 * landmarkId], shp[2 * landmarkId + 1]), _leaves);
+            // id across all forests
+            for (int leafId = 0; leafId < NUM_TREES; ++leafId)
+                _leaves[leafId] += leafIdOffset;
+            leafIdOffset += randomForests[stageId][landmarkId].nLeaves;
+        }
+
+        feature_node* features = genGlobalFeatures(nonzeroLeaves, NUM_LANDMARKS * NUM_TREES);
+        for (int coord = 0; coord < 2 * NUM_LANDMARKS; ++coord)
+        {
+            float delta = (float)predict(models[stageId][coord], features);
+            shp[coord] += delta;
+        }
+        delete[] features;
+
+        sprintf_s(testName, "%ss%02d.png", imgPath.c_str(), stageId + 1);
+        img.plotShape(shp);
+        img.saveAs(TEST_DATA_PATH + testName);
+        sprintf_s(testName, "%ss%02d.shp", imgPath.c_str(), stageId + 1);
+        dumpShapeBin(TEST_DATA_PATH + testName, shp);
+    }
+    toc();
+}
+
 void LBF::loadTrainingData(Image* trainImages, Matrix2Df& trainShapes, Matrix2Df& regShapes)
 {
     string imagePath, shapePath;
-    float _shp[2 * NUM_LANDMARKS];
+    float loadedShape[2 * NUM_LANDMARKS];
     for (int i = 0; i < TRAIN_DATA_SIZE; ++i)
     {
+        printf("\rloading train data %04d", i);
         imagePath = getImagePath(i);
         shapePath = getShapePath(i);
         trainImages[i].load(imagePath);
-        loadShape(shapePath, trainImages[i].width, trainImages[i].height, _shp);
-        bool ret = trainImages[i].detectFaceAndNormalize(_shp);
+        loadShape(shapePath, trainImages[i].width, trainImages[i].height, loadedShape);
+        bool ret = trainImages[i].detectFaceAndNormalize(loadedShape);
         assert(ret);
-        trainShapes.column(i) = _shp;
+        trainShapes.column(i) = loadedShape;
     }
+    printf("\n");
     mean(trainShapes, meanShape);
     string meanShapeFile = TRAINED_DATA_PATH + "meanshape";
     dumpShapeBin(meanShapeFile, meanShape);

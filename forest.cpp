@@ -53,6 +53,9 @@ void LbfRandomForest::build(const Image* trainImages, const Matrix2Df& inputRegS
         {
             const Image& img = trainImages[i / NUM_AUG];
             float cx = regShapes[0][i], cy = regShapes[1][i];
+            // Normalized value -> real value
+            cx = cx * img.faceWidth + img.faceLeftTop.x;
+            cy = cy * img.faceHeight + img.faceLeftTop.y;
 
             for (int pixelId = 0; pixelId < NUM_SAMPLE_PIXELS; ++pixelId)
             {

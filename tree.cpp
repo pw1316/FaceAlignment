@@ -2,6 +2,20 @@
 
 using std::vector;
 
+/* Assertion */
+#undef assert
+static void _pwassert(const wchar_t* expression, const wchar_t* file, unsigned line)
+{
+    printf("PW Assertion failed: %ws\n", expression);
+    printf("%ws(%u)\n", file, line);
+    volatile int i = 0;
+    i = 1 / i;
+}
+#define assert(expression) (void)(                                                       \
+            (!!(expression)) ||                                                              \
+            (_pwassert(_CRT_WIDE(#expression), _CRT_WIDE(__FILE__), (unsigned)(__LINE__)), 0) \
+        )
+
 static int2 getcombination(int idx, int n)
 {
     ++idx;
@@ -48,8 +62,11 @@ float2 LbfTree::run(const Image& img, const float2& landmark, int* reachedLeaf)
         }
         else
         {
-            float2 pt1 = landmark + float2(node->split.pt1.x, node->split.pt1.y);
-            float2 pt2 = landmark + float2(node->split.pt2.x, node->split.pt2.y);
+            float2 realLandmark;
+            realLandmark.x = landmark.x * img.faceWidth + img.faceLeftTop.x;
+            realLandmark.y = landmark.y * img.faceHeight + img.faceLeftTop.y;
+            float2 pt1 = realLandmark + float2(node->split.pt1.x, node->split.pt1.y);
+            float2 pt2 = realLandmark + float2(node->split.pt2.x, node->split.pt2.y);
             int color1 = img[clampi(lbf_roundf(pt1.y), 0, img.height - 1)][clampi(lbf_roundf(pt1.x), 0, img.width - 1)];
             int color2 = img[clampi(lbf_roundf(pt2.y), 0, img.height - 1)][clampi(lbf_roundf(pt2.x), 0, img.width - 1)];
             int feature = color1 - color2;
@@ -117,7 +134,7 @@ int LbfTree::build(
     vector<int> splitFeatures(nSample);
     vector<int> selectedPixelPairMap(nSamplePixelPair, 0); // select m features without replacement
 
-    const int featureRange = 255 + 256; // [-255,255]
+    const int featureRange = 0x1FF; // [-255,255]
     int featureCount[featureRange];
     double2 featureOffsetSum[featureRange];
     double2 featureOffsetSum2[featureRange];
@@ -142,7 +159,7 @@ int LbfTree::build(
             int* samplePixelValues = pixelValues[sampleIndex];
             features[i] = samplePixelValues[pixelPair.x] - samplePixelValues[pixelPair.y];
             double2 offset(gtOffsetsRow[0][sampleIndex], gtOffsetsRow[1][sampleIndex]);
-            double2 offset2 = offset*offset;
+            double2 offset2 = offset * offset;
             offsetSum += offset;
             offsetSum2 += offset2;
             int fv = features[i] + 255;

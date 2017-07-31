@@ -5,6 +5,20 @@ using std::string;
 using std::vector;
 using namespace cv;
 
+/* Assertion */
+#undef assert
+static void _pwassert(const wchar_t* expression, const wchar_t* file, unsigned line)
+{
+    printf("PW Assertion failed: %ws\n", expression);
+    printf("%ws(%u)\n", file, line);
+    volatile int i = 0;
+    i = 1 / i;
+}
+#define assert(expression) (void)(                                                       \
+            (!!(expression)) ||                                                              \
+            (_pwassert(_CRT_WIDE(#expression), _CRT_WIDE(__FILE__), (unsigned)(__LINE__)), 0) \
+        )
+
 static bool checkShapeInFace(Rect r, float* shp)
 {
     float sumX = 0;
@@ -88,6 +102,30 @@ bool Image::load(const string & fpath)
     }
 }
 
+bool Image::detectFace()
+{
+    CascadeClassifier cc;
+    if (!cc.load(CASCADE_NAME))
+    {
+        printf("Can't load cascade\n");
+        return false;
+    }
+    this->saveAsNoShape("~temp.png");
+    Mat cvImage = imread("~temp.png", IMREAD_GRAYSCALE);
+    vector<Rect> cvFaces;
+    Rect r = Rect(0, 0, 0, 0);
+    equalizeHist(cvImage, cvImage);
+    cc.detectMultiScale(cvImage, cvFaces, 1.1, 2);
+    assert(cvFaces.size() > 0);
+    r = cvFaces[cvFaces.size() - 1];
+    this->faceLeftTop.x = r.x;
+    this->faceLeftTop.y = r.y;
+    this->faceWidth = r.width;
+    this->faceHeight = r.height;
+    system("del \"~temp.png\"");
+    return true;
+}
+
 // Train Only. Assuming 1 face
 bool Image::detectFaceAndNormalize(float* shp)
 {
@@ -98,7 +136,7 @@ bool Image::detectFaceAndNormalize(float* shp)
         printf("Can't load cascade\n");
         return false;
     }
-    this->saveAs("~temp.png");
+    this->saveAsNoShape("~temp.png");
     Mat cvImage = imread("~temp.png", IMREAD_GRAYSCALE);
     vector<Rect> cvFaces;
     Rect r = Rect(0, 0, 0, 0);
@@ -106,20 +144,27 @@ bool Image::detectFaceAndNormalize(float* shp)
     cc.detectMultiScale(cvImage, cvFaces);
     if (cvFaces.size() <= 0)
     {
-        printf("No faces\n");
-        exit(-1);
+        r.x = 0;
+        r.y = 0;
+        r.width = width;
+        r.height = height;
     }
-    int faceId;
-    for (faceId = 0; faceId < cvFaces.size(); ++faceId)
+    else
     {
-        r = cvFaces[faceId];
-        if (checkShapeInFace(r, shp))
-            break;
-    }
-    if (faceId >= cvFaces.size())
-    {
-        printf("No shapes in face");
-        exit(-1);
+        int faceId;
+        for (faceId = 0; faceId < cvFaces.size(); ++faceId)
+        {
+            r = cvFaces[faceId];
+            if (checkShapeInFace(r, shp))
+                break;
+        }
+        if (faceId >= cvFaces.size())
+        {
+            r.x = 0;
+            r.y = 0;
+            r.width = width;
+            r.height = height;
+        }
     }
     this->faceLeftTop.x = r.x;
     this->faceLeftTop.y = r.y;
@@ -142,7 +187,18 @@ void Image::plotShape(float* shp)
 {
     if (!shape) shape = new int[2 * NUM_LANDMARKS];
     for (int i = 0; i < 2 * NUM_LANDMARKS; ++i)
-        shape[i] = lbf_roundf(shp[i]);
+    {
+        // y
+        if (i & 1)
+        {
+            shape[i] = lbf_roundf(shp[i] * faceHeight + faceLeftTop.y);
+        }
+        // x
+        else
+        {
+            shape[i] = lbf_roundf(shp[i] * faceWidth + faceLeftTop.x);
+        }
+    }
 }
 
 void Image::saveAs(const string& fpath)
@@ -170,6 +226,14 @@ void Image::saveAs(const string& fpath)
             }
         }
     }
+    FreeImage_Save(FIF_PNG, dib, filename);
+    FreeImage_Unload(dib);
+}
+
+void Image::saveAsNoShape(const std::string & fpath)
+{
+    const char* filename = fpath.c_str();
+    FIBITMAP* dib = FreeImage_ConvertFromRawBits(data, width, height, sizeof(uint8)*width, 8, 0, 0, 0);
     FreeImage_Save(FIF_PNG, dib, filename);
     FreeImage_Unload(dib);
 }
