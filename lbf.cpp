@@ -39,7 +39,7 @@ inline string getShapePath(int i)
     return TRAIN_DATA_PATH + fname;
 }
 #elif DATA_SET == SET_FACE_WAREHOUSE
-const string TRAIN_DATA_PATH = ".\\TrainData\\FaceWarehouse\\FaceWarehouse\\Tester_1\\TrainingPose\\";
+const string TRAIN_DATA_PATH = ".\\TrainData\\FaceWarehouse\\";
 const string TRAINED_DATA_PATH = ".\\TrainedModel\\FaceWarehouse\\";
 const string TEST_DATA_PATH = ".\\TestData\\FaceWarehouse\\";
 inline string getImagePath(int i)
@@ -303,10 +303,105 @@ void LBF::run(const string & imgPath)
     {
         // regress local binary features
         int leafIdOffset = 0;
+        Matrix2Df rotation(2, 2);
+        float scale;
+        {
+            float s1[2 * NUM_LANDMARKS];
+            float s2[2 * NUM_LANDMARKS];
+            float2 center1(0.0f), center2(0.0f);
+            Matrix2Df center12(2, 2), center22(2, 2);
+            for (int i = 0; i < NUM_LANDMARKS; i++)
+            {
+                s1[2 * i] = shp[2 * i];
+                s1[2 * i + 1] = shp[2 * i + 1];
+                s2[2 * i] = meanShape[2 * i];
+                s2[2 * i + 1] = meanShape[2 * i + 1];
+                center1.x += s1[2 * i];
+                center1.y += s1[2 * i + 1];
+                center2.x += s2[2 * i];
+                center2.y += s2[2 * i + 1];
+                center12[0][0] += s1[2 * i] * s1[2 * i];
+                center12[0][1] += s1[2 * i] * s1[2 * i + 1];
+                center12[1][0] += s1[2 * i] * s1[2 * i + 1];
+                center12[1][1] += s1[2 * i + 1] * s1[2 * i + 1];
+                center22[0][0] += s2[2 * i] * s2[2 * i];
+                center22[0][1] += s2[2 * i] * s2[2 * i + 1];
+                center22[1][0] += s2[2 * i] * s2[2 * i + 1];
+                center22[1][1] += s2[2 * i + 1] * s2[2 * i + 1];
+            }
+            center1 = (1.0f / NUM_LANDMARKS) * center1;
+            center2 = (1.0f / NUM_LANDMARKS) * center2;
+            center12[0][0] /= NUM_LANDMARKS;
+            center12[0][1] /= NUM_LANDMARKS;
+            center12[1][0] /= NUM_LANDMARKS;
+            center12[1][1] /= NUM_LANDMARKS;
+            center22[0][0] /= NUM_LANDMARKS;
+            center22[0][1] /= NUM_LANDMARKS;
+            center22[1][0] /= NUM_LANDMARKS;
+            center22[1][1] /= NUM_LANDMARKS;
+            for (int i = 0; i < NUM_LANDMARKS; i++)
+            {
+                s1[2 * i] -= center1.x;
+                s1[2 * i + 1] -= center1.y;
+                s2[2 * i] -= center2.x;
+                s2[2 * i + 1] -= center2.y;
+            }
+
+            // Covariance
+            Matrix2Df c1(2, 2);
+            Matrix2Df c2(2, 2);
+            c1[0][0] = center12[0][0] - center1.x * center1.x;
+            c1[0][1] = center12[0][1] - center1.x * center1.y;
+            c1[1][0] = center12[1][0] - center1.y * center1.x;
+            c1[1][1] = center12[1][1] - center1.y * center1.y;
+            c2[0][0] = center22[0][0] - center2.x * center2.x;
+            c2[0][1] = center22[0][1] - center2.x * center2.y;
+            c2[1][0] = center22[1][0] - center2.y * center2.x;
+            c2[1][1] = center22[1][1] - center2.y * center2.y;
+#define mypow2(n) ((n) * (n))
+            float scale1 = 0.0f, scale2 = 0.0f;
+            scale1 += mypow2(c1[0][0]);
+            scale1 += mypow2(c1[0][1]);
+            scale1 += mypow2(c1[1][0]);
+            scale1 += mypow2(c1[1][1]);
+            scale2 += mypow2(c2[0][0]);
+            scale2 += mypow2(c2[0][1]);
+            scale2 += mypow2(c2[1][0]);
+            scale2 += mypow2(c2[1][1]);
+            scale1 /= 4;
+            scale2 /= 4;
+            scale1 = sqrtf(sqrtf(scale1));
+            scale2 = sqrtf(sqrtf(scale2));
+#undef mypow2
+            scale = scale1 / scale2;
+            for (int i = 0; i < NUM_LANDMARKS; i++)
+            {
+                s1[2 * i] /= scale1;
+                s1[2 * i + 1] /= scale1;
+                s2[2 * i] /= scale2;
+                s2[2 * i + 1] /= scale2;
+            }
+
+            // rotation
+            float num = 0.0f, den = 0.0f;
+            for (int i = 0; i < NUM_LANDMARKS; i++)
+            {
+                num += s1[2 * i + 1] * s2[2 * i] - s1[2 * i] * s2[2 * i + 1];
+                den += s1[2 * i] * s2[2 * i] + s1[2 * i + 1] * s2[2 * i + 1];
+            }
+            float len = sqrtf(num * num + den * den);
+            rotation[0][0] = den / len;
+            rotation[0][1] = -num / len;
+            rotation[1][0] = num / len;
+            rotation[1][1] = den / len;
+        }
         for (int landmarkId = 0; landmarkId < NUM_LANDMARKS; ++landmarkId)
         {
+            float2 mean2regShape;
+            mean2regShape.x = scale * (rotation[0][0] * shp[2 * landmarkId] + rotation[0][1] * shp[2 * landmarkId + 1]);
+            mean2regShape.y = scale * (rotation[1][0] * shp[2 * landmarkId] + rotation[1][1] * shp[2 * landmarkId + 1]);
             int* _leaves = nonzeroLeaves + landmarkId * NUM_TREES;
-            randomForests[stageId][landmarkId].run(img, float2(shp[2 * landmarkId], shp[2 * landmarkId + 1]), _leaves);
+            randomForests[stageId][landmarkId].run(img, mean2regShape, _leaves);
             // id across all forests
             for (int leafId = 0; leafId < NUM_TREES; ++leafId)
                 _leaves[leafId] += leafIdOffset;
@@ -314,10 +409,23 @@ void LBF::run(const string & imgPath)
         }
 
         feature_node* features = genGlobalFeatures(nonzeroLeaves, NUM_LANDMARKS * NUM_TREES);
+        float ds[2 * NUM_LANDMARKS];
         for (int coord = 0; coord < 2 * NUM_LANDMARKS; ++coord)
         {
             float delta = (float)predict(models[stageId][coord], features);
-            shp[coord] += delta;
+            ds[coord] = delta;
+        }
+        for (int i = 0; i < NUM_LANDMARKS; ++i)
+        {
+            float2 tmp;
+            tmp.x = scale * (rotation[0][0] * ds[2 * i] + rotation[0][1] * ds[2 * i + 1]);
+            tmp.y = scale * (rotation[0][0] * ds[2 * i] + rotation[0][1] * ds[2 * i + 1]);
+            ds[2 * i] = tmp.x;
+            ds[2 * i + 1] = tmp.y;
+        }
+        for (int coord = 0; coord < 2 * NUM_LANDMARKS; ++coord)
+        {
+            shp[coord] += ds[coord];
         }
         delete[] features;
 

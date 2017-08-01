@@ -78,6 +78,7 @@ struct Matrix2D
     Matrix2D(int r, int c) :cols(c), rows(r), do_free(true)
     {
         data = new T[cols*rows];
+        memset(data, 0, sizeof(T) * cols * rows);
     }
     ~Matrix2D() { this->free(); }
     void free() { if (do_free && data) delete[] data; }
